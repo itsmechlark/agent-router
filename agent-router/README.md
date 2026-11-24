@@ -104,6 +104,20 @@ The plugin exposes OMP-derived agents such as `agent-router:scout`. Its aliases 
 | `security-reviewer` | `agent-router:security-reviewer` |
 | `sonic` | `agent-router:sonic` |
 
+### Route your own agents
+
+Agent types outside that table are refused, so a project's own subagent definitions cannot be dispatched while routing is active. Each role takes an aliases key — `scout_aliases`, `reviewer_aliases`, `security_reviewer_aliases`, `task_aliases`, and `sonic_aliases` — listing the local agent types it also routes, comma-separated. Set them with `/plugin configure agent-router@agent-router-tools`:
+
+```json
+"scout_aliases": "explainer,cold-reader",
+"security_reviewer_aliases": "bug-hunter",
+"task_aliases": "implementer,spec-writer"
+```
+
+A configured agent type keeps its own definition — its prompt, its tools, and its read-only setting — and runs on its role's model and effort, as `Plan` does with the task model. The agent types the plugin and Claude Code supply (`scout`, `Explore`, `reviewer`, `security-reviewer`, `task`, `general-purpose`, `sonic`) continue to dispatch as the managed `agent-router:` role, so existing routing is unchanged.
+
+An alias naming an agent type Claude Code does not define is rejected by the Agent tool, not by routing. Two roles cannot claim the same alias, and an agent type nobody lists is still refused. Aliases join the policy digest, so changing them marks the session pending like a model change.
+
 The dispatch guard enforces local named roles and validates their configured models against the same discovery catalog used by the picker. Per-role assignments take precedence over the caller's requested model. Keep `CLAUDE_CODE_SUBAGENT_MODEL_FORCE` unset when using differentiated role models.
 
 Each initialized session retains its endpoint and model-policy snapshot. You can update saved role assignments with `/agent-models` while routing continues with that snapshot. Start a new session to apply the updated assignments, or run `/agent-models-apply` to apply them to the current session. A fresh session becomes routing-ready once its five roles are configured.
@@ -121,6 +135,7 @@ With `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, Claude launches a teammate when i
 | `Explore` or `scout` | `agent-router:scout` |
 | None, `general-purpose`, or `task` | `agent-router:task` |
 | `reviewer`, `security-reviewer`, or `sonic` | The matching `agent-router:` role |
+| A type listed in a role's aliases key | That role's model and effort, keeping the agent's own definition |
 
 `Plan` and unmapped agent types are refused as teammates. A named call that Claude Code runs as a subagent, such as one with `isolation` or `cwd`, keeps the subagent routing.
 

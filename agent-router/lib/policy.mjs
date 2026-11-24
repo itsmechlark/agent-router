@@ -6,6 +6,24 @@ const aliases = {
   'security-reviewer': ['security-reviewer'], task: ['task', 'general-purpose', 'Plan'], sonic: ['sonic'],
 };
 
+const ALIAS_PATTERN = /^[A-Za-z][A-Za-z0-9_-]*$/;
+
+// A role's `<role>_aliases` option lists the local agent types it also answers
+// to, comma-separated. Duplicates across roles are rejected by validatePolicy.
+function configuredAliases(options, role) {
+  const key = `${role.replaceAll('-', '_')}_aliases`;
+  const value = options[key];
+  if (value === undefined || value === null || value === '') return [];
+  if (typeof value !== 'string') throw new Error(`List ${key} as comma-separated agent types.`);
+  const names = value.split(',').map(name => name.trim()).filter(Boolean);
+  for (const name of names) {
+    if (!ALIAS_PATTERN.test(name) || name === 'fork') {
+      throw new Error(`${key} holds an agent type Agent Router cannot route: ${JSON.stringify(name)}.`);
+    }
+  }
+  return names;
+}
+
 export function policyFromOptions(options = {}) {
   if (!options || typeof options !== 'object' || Array.isArray(options)) {
     throw new Error('Agent Router options must be an object.');
@@ -15,7 +33,7 @@ export function policyFromOptions(options = {}) {
   const roles = {};
   for (const role of ROLES) {
     const key = `${role.replaceAll('-', '_')}_model`;
-    roles[role] = { model: options[key], aliases: [...aliases[role]] };
+    roles[role] = { model: options[key], aliases: [...aliases[role], ...configuredAliases(options, role)] };
     const effortKey = `${role.replaceAll('-', '_')}_effort`;
     const effort = options[effortKey];
     if (effort === undefined || effort === '' || effort === 'default') continue;
