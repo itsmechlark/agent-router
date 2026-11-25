@@ -100,13 +100,13 @@ test('unavailable policy prevents downstream agent execution', async ($, on) => 
   expect(started).toBe(false);
 });
 
-test('fork dispatch cannot evade the role model assignment', async ($, on) => {
+test('fork dispatch passes through without routing', async ($, on) => {
   let started = false;
   on('agent.spawn', () => { started = true; return { model: 'sonnet' }; });
   await start($, on);
   const result = await $.agent.spawn(agentInput({ subagentType: 'fork', prompt: 'Inherit everything' }));
-  expect(typeof result.deny).toBe('string');
-  expect(started).toBe(false);
+  expect(result.deny).toBeUndefined();
+  expect(started).toBe(true);
 });
 
 test('a spawn that fails beneath Agent Router after routing is not reported as a routing failure', async ($, on) => {
