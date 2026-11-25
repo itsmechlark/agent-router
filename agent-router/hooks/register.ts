@@ -246,6 +246,7 @@ export function register(on: On, options: PluginOptions) {
       return e.subagentType.startsWith('agent-router:')
         ? { deny: 'Configure an Anthropic-compatible endpoint before using an Agent Router role.' } : next(e);
     }
+    if (e.subagentType === 'fork') return next(e);
     const launched = e.isTeammate ? teammateCalls.get(e.tool_use_id) : undefined;
     if (launched) {
       const result = await next({ ...e, subagentType: launched.type, model: launched.model });
