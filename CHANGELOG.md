@@ -2,6 +2,10 @@
 
 Each release explains what changed for you, in 120 words or less.
 
+## Agent Router 0.19.0
+
+- **Forks pass through without routing.** A fork spawn hit `routeAgent`, which threw "Agent Router cannot assign a model to a fork" and denied the spawn. Forks inherit the parent model by design, so routing has nothing to assign. The `agent.spawn` hook now passes forks straight to the engine, matching the `tool.call` bypass that was already in place.
+
 ## Agent Router 0.18.0
 
 - **Your own agents can run while routing is on.** An agent type the plugin did not supply was refused at dispatch — "No routing policy for agent type" — so a project's own subagents stopped working the moment Agent Router was enabled. Each role now takes an aliases key, such as `scout_aliases: "explainer,cold-reader"`, listing the agent types it also routes. A listed agent keeps its own prompt, tools and read-only setting, and runs on its role's model and effort, as `Plan` already did. Agent types nobody lists are still refused.
