@@ -53,6 +53,15 @@ export function resolveRole(policy, type) {
   return ROLES.find(role => type === `agent-router:${role}` || policy.roles[role].aliases.includes(type));
 }
 
+// The agent types the plugin and the engine supply. Anything else routed here
+// came from a configured alias and names a local agent definition, which
+// carries its own prompt and tools; routing assigns its model, not its body.
+const SUPPLIED_TYPES = new Set(['scout', 'Explore', 'reviewer', 'security-reviewer', 'task', 'general-purpose', 'sonic']);
+
+export function keepsDefinition(type) {
+  return typeof type === 'string' && !SUPPLIED_TYPES.has(type) && !type.startsWith('agent-router:');
+}
+
 /** @returns {{ role: string, type: string, model: string, effort?: 'low' | 'medium' | 'high' | 'xhigh' | 'max' }} */
 export function routeAgent(policy, input) {
   if (input.fork === true || input.subagentType === 'fork') {
@@ -63,8 +72,9 @@ export function routeAgent(policy, input) {
   if (!role || !policy.roles[role]) {
     throw new Error(`No routing policy for agent type ${JSON.stringify(type)}. Select a configured Agent Router role.`);
   }
-  // Keep the native read-only Plan definition while assigning the task model.
-  const selected = { role, type: type === 'Plan' ? 'Plan' : `agent-router:${role}`, model: policy.roles[role].model };
+  // Keep the native read-only Plan definition, and any local agent definition
+  // reached through a configured alias, while assigning the role's model.
+  const selected = { role, type: keepsDefinition(type) ? type : `agent-router:${role}`, model: policy.roles[role].model };
   return policy.roles[role].effort === undefined ? selected : { ...selected, effort: policy.roles[role].effort };
 }
 
@@ -78,7 +88,7 @@ export function routeTeammate(policy, input) {
   const selected = routeAgent(policy, { ...input, subagentType: type });
   const model = policy.teammate?.model ?? selected.model;
   const effort = policy.teammate?.effort ?? selected.effort;
-  const routed = { role: selected.role, type: `agent-router:${selected.role}`, model };
+  const routed = { role: selected.role, type: selected.type, model };
   return effort === undefined ? routed : { ...routed, effort };
 }
 

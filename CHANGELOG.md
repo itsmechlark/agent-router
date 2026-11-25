@@ -2,6 +2,10 @@
 
 Each release explains what changed for you, in 120 words or less.
 
+## Agent Router 0.18.0
+
+- **Your own agents can run while routing is on.** An agent type the plugin did not supply was refused at dispatch — "No routing policy for agent type" — so a project's own subagents stopped working the moment Agent Router was enabled. Each role now takes an aliases key, such as `scout_aliases: "explainer,cold-reader"`, listing the agent types it also routes. A listed agent keeps its own prompt, tools and read-only setting, and runs on its role's model and effort, as `Plan` already did. Agent types nobody lists are still refused.
+
 ## Agent Router 0.17.1
 
 - **Agents asked to run remotely start instead of failing.** When Claude asked for an agent with `isolation: "remote"`, Agent Router refused it with "Remote agents cannot inherit the local Agent Router Mod", for every agent type, and Claude kept retrying other types until it gave up. Through a gateway such as an API key endpoint, Claude Code cannot run remote agents anyway and runs them locally. Agent Router now does the same for every remote call: the agent starts in a worktree in a git repository, or in place outside one, with its role's model and effort.
